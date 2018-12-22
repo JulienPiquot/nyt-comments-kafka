@@ -1,16 +1,44 @@
 import au.com.bytecode.opencsv.CSVParser;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class Comment {
 
     public static void main(String[] args) throws IOException {
-        List<Comment> comments = readComments();
-        System.out.println(comments.size());
+        Stream<Comment> comments = commentStream();
+        comments.forEach(System.out::println);
+    }
+
+    public static Stream<Comment> commentStream() throws IOException {
+        String[] files = {"data/test.csv"};
+        Stream<Comment> cStream = Arrays.stream(files).flatMap(file -> {
+            try {
+                Scanner lineScanner = new Scanner(Paths.get(file));
+                lineScanner.useDelimiter("\n");
+                CSVParser csvParser = new CSVParser();
+                String[] headers = csvParser.parseLine(lineScanner.next());
+                final Spliterator<String> splt = Spliterators.spliterator(lineScanner, Long.MAX_VALUE, Spliterator.ORDERED | Spliterator.NONNULL);
+                return StreamSupport.stream(splt, false).onClose(lineScanner::close).map(line -> {
+                    try {
+                        return parseLine(line, headers);
+                    } catch (IOException e) {
+                        System.out.println("fail to read " + file + " - corrupted line : [" + line + "]");
+                        throw new RuntimeException(e);
+                    }
+                });
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        return cStream;
     }
 
     public static List<Comment> readComments() throws IOException {
@@ -24,54 +52,68 @@ public class Comment {
 //                "data/CommentsMarch2018.csv",
 //                "data/CommentsApril2018.csv"};
 
+
+
         List<Comment> comments = new ArrayList<>();
-        CSVParser csvParser = new CSVParser();
         for (String file : files) {
-            try (Scanner lineScanner = new Scanner(Paths.get(file))) {
-                lineScanner.useDelimiter("\r\n");
+            try (Reader br = Files.newBufferedReader(Paths.get(file), StandardCharsets.UTF_8);
+                 Scanner lineScanner = new Scanner(br)) {
+                lineScanner.useDelimiter("\n");
+                CSVParser csvParser = new CSVParser();
                 String[] headers = csvParser.parseLine(lineScanner.next());
                 int lineNb = 0;
                 while (lineScanner.hasNext()) {
+                    if (lineNb % 1000 == 0) {
+                        System.out.println("read line " + lineNb);
+                    }
                     String line = lineScanner.next();
-                    Map<String, String> commentMap = new HashMap<>();
                     try {
                         lineNb++;
-                        String[] lineItem = csvParser.parseLine(line);
-                        for (int i = 0; i < lineItem.length; i++) {
-                            commentMap.put(headers[i], lineItem[i]);
-                        }
-                        Comment comment = new Comment();
-                        comment.approveDate = new Timestamp(1000 * Long.parseLong(commentMap.get("approveDate")));
-                        comment.commentBody = commentMap.get("commentBody");
-                        comment.commentID = (int) Double.parseDouble(commentMap.get("commentID"));
-                        comment.commentSequence = (int) Double.parseDouble(commentMap.get("commentSequence"));
-                        comment.commentType = commentMap.get("commentType");
-                        comment.createDate = new Timestamp(1000 * Long.parseLong(commentMap.get("createDate")));
-                        comment.depth = (int) Double.parseDouble(commentMap.get("depth"));
-                        comment.editorsSelection = Boolean.parseBoolean(commentMap.get("editorsSelection"));
-                        comment.parentID = (int) Double.parseDouble(commentMap.get("parentID"));
-                        comment.recommandations = Integer.parseInt(Optional.ofNullable(commentMap.get("recommandations")).orElse("0"));
-                        comment.replyCount = Integer.parseInt(commentMap.get("replyCount"));
-                        comment.reportAbuseFlag = Boolean.parseBoolean(commentMap.get("reportAbuseFlag"));
-                        comment.sharing = Integer.parseInt(commentMap.get("sharing"));
-                        comment.status = commentMap.get("status");
-                        comment.timespeople = Integer.parseInt(commentMap.get("timespeople"));
-                        comment.trusted = Integer.parseInt(commentMap.get("trusted"));
-                        comment.userDisplayName = commentMap.get("userDisplayName");
-                        comment.useLocation = commentMap.get("useLocation");
-                        comment.articleID = commentMap.get("articleID");
-                        comment.newDesk = commentMap.get("newDesk");
-                        comment.articleWordCount = Integer.parseInt(commentMap.get("articleWordCount"));
-                        comment.printPage = Integer.parseInt(commentMap.get("printPage"));
-                        comment.typeOfMaterial = commentMap.get("typeOfMaterial");
-                        comments.add(comment);
+                        comments.add(parseLine(line, headers));
                     } catch (Exception e) {
                         System.out.println("fail to read " + file + ":" + lineNb + " - corrupted line : [" + line + "]");
+                        e.printStackTrace();
                     }
+
                 }
             }
         }
         return comments;
+    }
+
+    private static Comment parseLine(String line, String[] headers) throws IOException {
+        Map<String, String> commentMap = new HashMap<>();
+        CSVParser csvParser = new CSVParser();
+        String[] lineItem = csvParser.parseLine(line);
+        for (int i = 0; i < lineItem.length; i++) {
+            commentMap.put(headers[i], lineItem[i]);
+        }
+        Comment comment = new Comment();
+        comment.approveDate = new Timestamp(1000 * Long.parseLong(commentMap.get("approveDate")));
+        comment.commentBody = commentMap.get("commentBody");
+        comment.commentID = (int) Double.parseDouble(commentMap.get("commentID"));
+        comment.commentSequence = (int) Double.parseDouble(commentMap.get("commentSequence"));
+        comment.commentType = commentMap.get("commentType");
+        comment.createDate = new Timestamp(1000 * Long.parseLong(commentMap.get("createDate")));
+        comment.depth = (int) Double.parseDouble(commentMap.get("depth"));
+        comment.editorsSelection = Boolean.parseBoolean(commentMap.get("editorsSelection"));
+        comment.parentID = (int) Double.parseDouble(commentMap.get("parentID"));
+        comment.recommandations = Integer.parseInt(Optional.ofNullable(commentMap.get("recommandations")).orElse("0"));
+        comment.replyCount = Integer.parseInt(commentMap.get("replyCount"));
+        comment.reportAbuseFlag = Boolean.parseBoolean(commentMap.get("reportAbuseFlag"));
+        comment.sharing = Integer.parseInt(commentMap.get("sharing"));
+        comment.status = commentMap.get("status");
+        comment.timespeople = Integer.parseInt(commentMap.get("timespeople"));
+        comment.trusted = Integer.parseInt(commentMap.get("trusted"));
+        comment.userDisplayName = commentMap.get("userDisplayName");
+        comment.useLocation = commentMap.get("useLocation");
+        comment.articleID = commentMap.get("articleID");
+        comment.newDesk = commentMap.get("newDesk");
+        comment.articleWordCount = Integer.parseInt(commentMap.get("articleWordCount"));
+        comment.printPage = Integer.parseInt(commentMap.get("printPage"));
+        comment.typeOfMaterial = commentMap.get("typeOfMaterial");
+        return comment;
+
     }
 
     private Timestamp approveDate;
