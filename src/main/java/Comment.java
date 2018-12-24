@@ -1,7 +1,6 @@
 import au.com.bytecode.opencsv.CSVParser;
 
-import java.io.IOException;
-import java.io.Reader;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -10,15 +9,41 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-public class Comment {
+public class Comment implements Serializable {
 
     public static void main(String[] args) throws IOException {
         Stream<Comment> comments = commentStream();
         comments.forEach(System.out::println);
     }
 
+    public static Comment deserialize(byte[] data) {
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data))) {
+            return (Comment) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] serialize(Comment article) {
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(os)) {
+            oos.writeObject(article);
+            return os.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static Stream<Comment> commentStream() throws IOException {
-        String[] files = {"data/test.csv"};
+        String[] files = {"data/CommentsJan2017.csv",
+                "data/CommentsFeb2017.csv",
+                "data/CommentsMarch2017.csv",
+                "data/CommentsApril2017.csv",
+                "data/CommentsMay2017.csv",
+                "data/CommentsJan2018.csv",
+                "data/CommentsFeb2018.csv",
+                "data/CommentsMarch2018.csv",
+                "data/CommentsApril2018.csv"};
         Stream<Comment> cStream = Arrays.stream(files).flatMap(file -> {
             try {
                 Scanner lineScanner = new Scanner(Paths.get(file));
@@ -29,11 +54,13 @@ public class Comment {
                 return StreamSupport.stream(splt, false).onClose(lineScanner::close).map(line -> {
                     try {
                         return parseLine(line, headers);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         System.out.println("fail to read " + file + " - corrupted line : [" + line + "]");
-                        throw new RuntimeException(e);
+                        e.printStackTrace();
+                        return null;
+                        //throw new RuntimeException(e);
                     }
-                });
+                }).filter(Objects::nonNull);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -42,15 +69,15 @@ public class Comment {
     }
 
     public static List<Comment> readComments() throws IOException {
-        String[] files = {"data/CommentsJan2017.csv"};
-//                "data/CommentsFeb2017.csv",
-//                "data/CommentsMarch2017.csv",
-//                "data/CommentsApril2017.csv",
-//                "data/CommentsMay2017.csv",
-//                "data/CommentsJan2018.csv",
-//                "data/CommentsFeb2018.csv",
-//                "data/CommentsMarch2018.csv",
-//                "data/CommentsApril2018.csv"};
+        String[] files = {"data/CommentsJan2017.csv",
+                "data/CommentsFeb2017.csv",
+                "data/CommentsMarch2017.csv",
+                "data/CommentsApril2017.csv",
+                "data/CommentsMay2017.csv",
+                "data/CommentsJan2018.csv",
+                "data/CommentsFeb2018.csv",
+                "data/CommentsMarch2018.csv",
+                "data/CommentsApril2018.csv"};
 
 
 
@@ -94,7 +121,7 @@ public class Comment {
         comment.commentID = (int) Double.parseDouble(commentMap.get("commentID"));
         comment.commentSequence = (int) Double.parseDouble(commentMap.get("commentSequence"));
         comment.commentType = commentMap.get("commentType");
-        comment.createDate = new Timestamp(1000 * Long.parseLong(commentMap.get("createDate")));
+        comment.createDate = new Timestamp(1000 * Math.round(Double.parseDouble(commentMap.get("createDate"))));
         comment.depth = (int) Double.parseDouble(commentMap.get("depth"));
         comment.editorsSelection = Boolean.parseBoolean(commentMap.get("editorsSelection"));
         comment.parentID = (int) Double.parseDouble(commentMap.get("parentID"));
