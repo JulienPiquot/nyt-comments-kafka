@@ -20,7 +20,7 @@ public class CommentProducer {
         try (Producer<String, byte[]> producer = new KafkaProducer<>(props)) {
             Comment.commentStream().forEach(comment -> {
                 //System.out.println(comment.getCommentBody());
-                producer.send(new ProducerRecord<>("comments2", Comment.serialize(comment)));
+                producer.send(new ProducerRecord<>("comments", Comment.serialize(comment)));
             });
         }
     }

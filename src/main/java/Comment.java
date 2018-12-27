@@ -125,19 +125,19 @@ public class Comment implements Serializable {
         comment.depth = (int) Double.parseDouble(commentMap.get("depth"));
         comment.editorsSelection = Boolean.parseBoolean(commentMap.get("editorsSelection"));
         comment.parentID = (int) Double.parseDouble(commentMap.get("parentID"));
-        comment.recommandations = Integer.parseInt(Optional.ofNullable(commentMap.get("recommandations")).orElse("0"));
-        comment.replyCount = Integer.parseInt(commentMap.get("replyCount"));
+        comment.recommandations = (int) Double.parseDouble(Optional.ofNullable(commentMap.get("recommendations")).orElse("0"));
+        comment.replyCount = (int) Double.parseDouble(commentMap.get("replyCount"));
         comment.reportAbuseFlag = Boolean.parseBoolean(commentMap.get("reportAbuseFlag"));
-        comment.sharing = Integer.parseInt(commentMap.get("sharing"));
+        comment.sharing = (int) Double.parseDouble(commentMap.get("sharing"));
         comment.status = commentMap.get("status");
-        comment.timespeople = Integer.parseInt(commentMap.get("timespeople"));
-        comment.trusted = Integer.parseInt(commentMap.get("trusted"));
+        comment.timespeople = (int) Double.parseDouble(commentMap.get("timespeople"));
+        comment.trusted = (int) Double.parseDouble(commentMap.get("trusted"));
         comment.userDisplayName = commentMap.get("userDisplayName");
         comment.useLocation = commentMap.get("useLocation");
         comment.articleID = commentMap.get("articleID");
         comment.newDesk = commentMap.get("newDesk");
-        comment.articleWordCount = Integer.parseInt(commentMap.get("articleWordCount"));
-        comment.printPage = Integer.parseInt(commentMap.get("printPage"));
+        comment.articleWordCount = (int) Double.parseDouble(commentMap.get("articleWordCount"));
+        comment.printPage = (int) Double.parseDouble(commentMap.get("printPage"));
         comment.typeOfMaterial = commentMap.get("typeOfMaterial");
         return comment;
 
