@@ -18,26 +18,16 @@ public class NYTProducer {
         props.put("linger.ms", 1);
         props.put("buffer.memory", 33554432);
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        //props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        //props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
         System.out.println("Hello World ! Starting producing articles");
         List<Article> articles = Article.readArticles().subList(20, 30);
-        try (Producer<String, byte[]> producer = new KafkaProducer<>(props)) {
+        try (Producer<String, String> producer = new KafkaProducer<>(props)) {
             for (Article article : articles) {
                 System.out.println("produce : " + article.getSnippet());
-                producer.send(new ProducerRecord<>("articles", serialize(article)));
+                producer.send(new ProducerRecord<>("test", article.getHeadline()));
             }
-        }
-    }
-
-    public static byte[] serialize(Article article) {
-        try (ByteArrayOutputStream os = new ByteArrayOutputStream();
-             ObjectOutputStream oos = new ObjectOutputStream(os)) {
-            oos.writeObject(article);
-            return os.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 }

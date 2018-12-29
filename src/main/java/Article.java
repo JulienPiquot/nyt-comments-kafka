@@ -1,7 +1,6 @@
 import au.com.bytecode.opencsv.CSVParser;
 
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
@@ -12,6 +11,24 @@ public class Article implements Serializable {
     public static void main(String[] args) throws IOException {
         List<Article> articles = readArticles();
         System.out.println(articles);
+    }
+
+    public static Article deserialize(byte[] data) {
+        try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data))) {
+            return (Article) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] serialize(Article article) {
+        try (ByteArrayOutputStream os = new ByteArrayOutputStream();
+             ObjectOutputStream oos = new ObjectOutputStream(os)) {
+            oos.writeObject(article);
+            return os.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static List<Article> readArticles() throws IOException {

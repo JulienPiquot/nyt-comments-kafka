@@ -31,7 +31,7 @@ public class CommentStats {
             KeyValue<String, Long> next = range.next();
             Long recoSum = recommandationStore.get(next.key);
             if (recoSum != null) {
-                System.out.println(i + " - count for " + next.key + ": " + next.value + " - recommandation sum is: " + recoSum);
+                System.out.println(i + " - count for " + next.key + ": " + next.value + " - recommandation avg is: " + recoSum / next.value);
             } else {
                 System.out.println("no reco sum for " + next.key);
             }
@@ -57,7 +57,6 @@ public class CommentStats {
 
         final KStream<String, Comment> source = builder.stream("comments");
 
-        source.foreach((key, value) -> System.out.println(value.getRecommandations()));
         KGroupedStream<String, Comment> kgStream = source.groupBy((key, value) -> value.getArticleID());
         Aggregator<String, Comment, Long> agg = (key, value, aggregate) -> value.getRecommandations() + aggregate;
         Initializer<Long> init = () -> 0L;
@@ -86,9 +85,8 @@ public class CommentStats {
             streams.start();
             latch.await();
         } catch (final Throwable e) {
-            System.exit(1);
+            e.printStackTrace();
         }
-        System.exit(0);
     }
 }
 
