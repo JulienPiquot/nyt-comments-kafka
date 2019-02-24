@@ -4,6 +4,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.io.IOException;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class CommentProducer {
 
@@ -17,11 +18,16 @@ public class CommentProducer {
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.ByteArraySerializer");
 
+        double start = System.nanoTime();
+        AtomicInteger counter = new AtomicInteger(0);
         try (Producer<String, byte[]> producer = new KafkaProducer<>(props)) {
-            Comment.commentStream().forEach(comment -> {
-                //System.out.println(comment.getCommentBody());
-                producer.send(new ProducerRecord<>("comments", Comment.serialize(comment)));
+            Comment.commentStream().limit(500000).forEach(comment -> {
+                producer.send(new ProducerRecord<>("comment12", Comment.serialize(comment)));
+                counter.incrementAndGet();
             });
         }
+        double end = System.nanoTime();
+        System.out.println("number of comments : " + counter.get());
+        System.out.println((end - start) / 1000000000 + "s");
     }
 }
